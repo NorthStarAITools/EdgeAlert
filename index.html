@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Edge Alert — Prediction Market Signal Feed</title>
+<meta name="description" content="Real-time Kalshi prediction market signals calibrated on 80,000+ markets. Know which side has edge before the market closes." />
+
+<!-- Open Graph -->
+<meta property="og:title" content="Edge Alert — Prediction Market Signals" />
+<meta property="og:description" content="Calibrated signal feed for Kalshi markets. Crypto + sports. Real-time. $29/month." />
+<meta property="og:type" content="website" />
+
+<style>
+  :root {
+    --bg: #08080e;
+    --surface: #0e0e18;
+    --card: #11111c;
+    --border: #1c1c2e;
+    --text: #dde0ec;
+    --muted: #5a5a78;
+    --light-muted: #8888a8;
+    --green: #00e676;
+    --green-soft: #00c853;
+    --green-glow: #00e67618;
+    --accent: #6c63ff;
+    --yellow: #ffd740;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  /* ── Nav ── */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(8, 8, 14, 0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+  }
+
+  .nav-inner {
+    max-width: 1000px;
+    margin: 0 auto;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    text-decoration: none;
+    letter-spacing: -0.3px;
+  }
+
+  .logo em { color: var(--green); font-style: normal; }
+
+  .nav-links {
+    display: flex;
+    gap: 28px;
+    align-items: center;
+  }
+
+  .nav-links a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--text); }
+
+  .nav-cta {
+    background: var(--green);
+    color: #000 !important;
+    padding: 7px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px !important;
+    transition: opacity 0.2s !important;
+  }
+
+  .nav-cta:hover { opacity: 0.88; }
+
+  /* ── Hero ── */
+  .hero {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 80px 24px 72px;
+    text-align: center;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--green-glow);
+    border: 1px solid #00e67628;
+    border-radius: 99px;
+    padding: 5px 14px;
+    font-size: 13px;
+    color: var(--green);
+    margin-bottom: 24px;
+  }
+
+  .badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: blink 2s infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  h1 {
+    font-size: clamp(32px, 6vw, 54px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -1.5px;
+    margin-bottom: 20px;
+  }
+
+  h1 .hl { color: var(--green); }
+
+  .hero-sub {
+    font-size: clamp(16px, 2.5vw, 19px);
+    color: var(--light-muted);
+    max-width: 580px;
+    margin: 0 auto 36px;
+    line-height: 1.6;
+  }
+
+  .hero-cta-group {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    background: var(--green);
+    color: #000;
+    padding: 14px 28px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 16px;
+    text-decoration: none;
+    transition: opacity 0.2s, transform 0.1s;
+    display: inline-block;
+  }
+
+  .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+
+  .btn-secondary {
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 14px 28px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 16px;
+    text-decoration: none;
+    transition: border-color 0.2s, background 0.2s;
+    display: inline-block;
+  }
+
+  .btn-secondary:hover { border-color: var(--light-muted); background: var(--surface); }
+
+  /* ── Stats bar ── */
+  .stats-bar {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 28px 24px;
+  }
+
+  .stats-inner {
+    max-width: 1000px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 24px;
+    text-align: center;
+  }
+
+  .stat-item-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: -0.5px;
+  }
+
+  .stat-item-label {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  /* ── Sections ── */
+  section {
+    padding: 72px 24px;
+  }
+
+  .container {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .section-eyebrow {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--green);
+    margin-bottom: 12px;
+  }
+
+  h2 {
+    font-size: clamp(24px, 4vw, 36px);
+    font-weight: 700;
+    letter-spacing: -0.7px;
+    margin-bottom: 16px;
+  }
+
+  .section-sub {
+    color: var(--light-muted);
+    font-size: 16px;
+    max-width: 560px;
+    margin-bottom: 48px;
+  }
+
+  /* ── How it works ── */
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+  }
+
+  .step-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+  }
+
+  .step-num {
+    width: 32px;
+    height: 32px;
+    background: var(--green-glow);
+    border: 1px solid #00e67628;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--green);
+    margin-bottom: 14px;
+  }
+
+  .step-title {
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 15px;
+  }
+
+  .step-body {
+    font-size: 14px;
+    color: var(--light-muted);
+    line-height: 1.6;
+  }
+
+  /* ── Signal preview ── */
+  .signal-preview {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 13px;
+  }
+
+  .preview-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 12px;
+    font-family: inherit;
+  }
+
+  .preview-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .preview-dot.r { background: #ff5252; }
+  .preview-dot.y { background: #ffd740; }
+  .preview-dot.g { background: #00e676; }
+
+  .preview-body { padding: 20px; }
+
+  .signal-line { display: block; margin-bottom: 14px; }
+
+  .signal-block {
+    background: #00e67608;
+    border: 1px solid #00e67618;
+    border-left: 3px solid var(--green);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+
+  .signal-header { color: var(--green); margin-bottom: 6px; }
+  .signal-row { color: var(--light-muted); margin-bottom: 3px; }
+  .signal-row span { color: var(--text); }
+
+  /* ── Pricing ── */
+  #pricing { background: var(--surface); }
+
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    max-width: 700px;
+  }
+
+  .price-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    position: relative;
+  }
+
+  .price-card.featured {
+    border-color: var(--green);
+    box-shadow: 0 0 0 1px var(--green);
+  }
+
+  .featured-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--green);
+    color: #000;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 12px;
+    border-radius: 99px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
+  .plan-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+  }
+
+  .plan-price {
+    font-size: 40px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 4px;
+  }
+
+  .plan-period {
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 24px;
+  }
+
+  .plan-features {
+    list-style: none;
+    margin-bottom: 28px;
+  }
+
+  .plan-features li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--light-muted);
+    margin-bottom: 10px;
+  }
+
+  .plan-features li::before {
+    content: "✓";
+    color: var(--green);
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .plan-features li.dim::before { color: var(--muted); }
+  .plan-features li.dim { color: var(--muted); }
+
+  .plan-cta {
+    display: block;
+    text-align: center;
+    padding: 13px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 15px;
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+
+  .plan-cta.primary { background: var(--green); color: #000; }
+  .plan-cta.secondary {
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .plan-cta:hover { opacity: 0.85; }
+
+  /* ── FAQ ── */
+  .faq-list { max-width: 640px; }
+
+  .faq-item {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 0;
+  }
+
+  .faq-q {
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 8px;
+  }
+
+  .faq-a {
+    color: var(--light-muted);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  /* ── CTA section ── */
+  .cta-section {
+    text-align: center;
+    background: linear-gradient(180deg, var(--bg) 0%, #0d1a10 100%);
+    border-top: 1px solid var(--border);
+  }
+
+  .cta-section h2 { margin-bottom: 12px; }
+  .cta-section p { color: var(--light-muted); margin-bottom: 32px; }
+
+  /* ── Footer ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 28px 24px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.8;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 600px) {
+    .nav-links { gap: 16px; }
+    .hero { padding: 56px 20px 56px; }
+    section { padding: 52px 20px; }
+    .pricing-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Nav ──────────────────────────────────────────────────────────── -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="logo">⚡ Edge<em>Alert</em></a>
+    <div class="nav-links">
+      <a href="#how-it-works">How It Works</a>
+      <a href="#accuracy">Accuracy</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#pricing" class="nav-cta">Subscribe →</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Hero ─────────────────────────────────────────────────────────── -->
+<div class="hero">
+  <div class="hero-badge">
+    <div class="badge-dot"></div>
+    Live signal feed — Kalshi prediction markets
+  </div>
+  <h1>
+    Know which side<br/>has <span class="hl">edge</span> before the close.
+  </h1>
+  <p class="hero-sub">
+    Edge Alert scans Kalshi prediction markets in real time and flags
+    opportunities where calibrated win rates diverge from market price —
+    net of fees.
+  </p>
+  <div class="hero-cta-group">
+    <!-- Replace href values with your Stripe Payment Links -->
+    <a href="#pricing" class="btn-primary">Get Edge Alert → $29/mo</a>
+    <a href="accuracy_dashboard.html" class="btn-secondary">View Accuracy Data</a>
+  </div>
+</div>
+
+<!-- ── Stats bar ─────────────────────────────────────────────────────── -->
+<div class="stats-bar">
+  <div class="stats-inner">
+    <div>
+      <div class="stat-item-value">80,000+</div>
+      <div class="stat-item-label">Markets calibrated</div>
+    </div>
+    <div>
+      <div class="stat-item-value">2</div>
+      <div class="stat-item-label">Market types scanned</div>
+    </div>
+    <div>
+      <div class="stat-item-value">≤60s</div>
+      <div class="stat-item-label">Alert latency</div>
+    </div>
+    <div>
+      <div class="stat-item-value">Fee-adjusted</div>
+      <div class="stat-item-label">Edge net of Kalshi fees</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── How It Works ──────────────────────────────────────────────────── -->
+<section id="how-it-works">
+  <div class="container">
+    <div class="section-eyebrow">How It Works</div>
+    <h2>Calibration → Signal → Alert</h2>
+    <p class="section-sub">
+      No sentiment. No gut feel. Edge is calculated from historical settlement
+      data and compared to current market prices.
+    </p>
+
+    <div class="steps">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <div class="step-title">Calibration model</div>
+        <div class="step-body">
+          Win rates at each price level are measured from 80,000+ settled
+          Kalshi markets. The model knows what a 75¢ market actually resolves
+          YES at historically — not what the price implies.
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <div class="step-title">Live market scan</div>
+        <div class="step-body">
+          Edge Alert polls active Kalshi markets continuously — crypto 15-minute
+          windows and late-game sports markets. Only scans when conditions
+          match calibrated edges (final 3 minutes, 85%+ game completion).
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <div class="step-title">Edge calculation</div>
+        <div class="step-body">
+          For each live market, edge = (calibrated win rate × payout) −
+          (loss probability × stake) − Kalshi taker fee. Only signals with
+          positive edge after fees are surfaced.
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">04</div>
+        <div class="step-title">Telegram alert</div>
+        <div class="step-body">
+          Qualifying signals are pushed to your private Telegram channel instantly.
+          Each alert shows the ticker, side, price, edge %, expected value, and
+          confidence tier. No noise — just actionable signals.
+        </div>
+      </div>
+    </div>
+
+    <!-- Sample signal -->
+    <div style="margin-top: 40px; max-width: 500px;">
+      <div class="signal-preview">
+        <div class="preview-header">
+          <div class="preview-dot r"></div>
+          <div class="preview-dot y"></div>
+          <div class="preview-dot g"></div>
+          <span style="margin-left: 6px;">Edge Alert — Telegram Preview</span>
+        </div>
+        <div class="preview-body">
+          <div class="preview-header" style="background:transparent; border:none; padding:0; margin-bottom:10px; font-size:13px;">
+            ⚡ <strong style="color:#e0e0e8">2 signals found</strong> · 14:32 UTC
+          </div>
+          <div class="signal-block">
+            <div class="signal-header">🏀 [HIGH] YES — KXNBAGAME-24-LAL-OKC</div>
+            <div class="signal-row">Price: <span>84¢</span></div>
+            <div class="signal-row">Edge: <span>+6.2%</span></div>
+            <div class="signal-row">EV/contract: <span>+5.2¢</span></div>
+            <div class="signal-row">Win rate: <span>92.6% (n=2,847)</span></div>
+            <div class="signal-row">Game: <span>91% complete</span></div>
+          </div>
+          <div class="signal-block">
+            <div class="signal-header">₿ [MEDIUM] YES — KXBTC15M-25-T32143</div>
+            <div class="signal-row">Price: <span>79¢ · Min 14</span></div>
+            <div class="signal-row">Edge: <span>+3.1%</span></div>
+            <div class="signal-row">EV/contract: <span>+2.4¢</span></div>
+            <div class="signal-row">Win rate: <span>81.5% (n=1,203)</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Accuracy ──────────────────────────────────────────────────────── -->
+<section id="accuracy" style="background: var(--surface);">
+  <div class="container">
+    <div class="section-eyebrow">Track Record</div>
+    <h2>Every signal tracked against settlement</h2>
+    <p class="section-sub">
+      Predicted outcome vs actual Kalshi settlement — updated automatically
+      after every market closes.
+    </p>
+
+    <a href="accuracy_dashboard.html" class="btn-secondary" style="display:inline-block; margin-bottom:32px;">
+      View full accuracy dashboard →
+    </a>
+
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px; max-width:700px;">
+      <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px;">
+        <div style="font-size:12px; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); margin-bottom:8px;">Calibration basis</div>
+        <div style="font-size:24px; font-weight:700; color:var(--green)">80K+</div>
+        <div style="font-size:13px; color:var(--muted)">settled Kalshi markets</div>
+      </div>
+      <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px;">
+        <div style="font-size:12px; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); margin-bottom:8px;">Sports (late game)</div>
+        <div style="font-size:24px; font-weight:700; color:var(--green)">98.9%</div>
+        <div style="font-size:13px; color:var(--muted)">win rate at 90–99¢ (n=2,100)</div>
+      </div>
+      <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px;">
+        <div style="font-size:12px; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); margin-bottom:8px;">Crypto (min 15)</div>
+        <div style="font-size:24px; font-weight:700; color:var(--green)">95.1%</div>
+        <div style="font-size:13px; color:var(--muted)">win rate at 81–90¢ range</div>
+      </div>
+    </div>
+
+    <p style="margin-top:20px; font-size:13px; color:var(--muted); max-width:560px;">
+      Calibration stats are from historical backtests. Live signal accuracy is
+      tracked separately and visible in the accuracy dashboard.
+      Past results do not guarantee future performance.
+    </p>
+  </div>
+</section>
+
+<!-- ── Pricing ───────────────────────────────────────────────────────── -->
+<section id="pricing">
+  <div class="container">
+    <div class="section-eyebrow">Pricing</div>
+    <h2>Simple, flat subscription</h2>
+    <p class="section-sub">
+      Cancel anytime. No lock-in. Signals keep running as long as you're subscribed.
+    </p>
+
+    <div class="pricing-grid">
+
+      <div class="price-card">
+        <div class="plan-name">Basic</div>
+        <div class="plan-price">$29</div>
+        <div class="plan-period">per month</div>
+        <ul class="plan-features">
+          <li>Telegram signal alerts</li>
+          <li>Crypto 15-min signals (KXBTC15M)</li>
+          <li>Sports late-game signals</li>
+          <li>Daily digest summary</li>
+          <li>Accuracy dashboard access</li>
+          <li class="dim">API access</li>
+          <li class="dim">Priority support</li>
+        </ul>
+        <!-- Replace with your Stripe Payment Link URL -->
+        <a href="STRIPE_BASIC_PAYMENT_LINK" class="plan-cta secondary" id="basic-cta">
+          Get Started
+        </a>
+      </div>
+
+      <div class="price-card featured">
+        <div class="featured-badge">Most Popular</div>
+        <div class="plan-name">Pro</div>
+        <div class="plan-price">$79</div>
+        <div class="plan-period">per month</div>
+        <ul class="plan-features">
+          <li>Everything in Basic</li>
+          <li>Raw signal JSON via API</li>
+          <li>Lower edge threshold (1% vs 2%)</li>
+          <li>Multiple Telegram channels</li>
+          <li>Historical signal archive</li>
+          <li>Early access to new signal types</li>
+          <li>Priority support</li>
+        </ul>
+        <!-- Replace with your Stripe Payment Link URL -->
+        <a href="STRIPE_PRO_PAYMENT_LINK" class="plan-cta primary" id="pro-cta">
+          Get Pro →
+        </a>
+      </div>
+
+    </div>
+
+    <p style="margin-top:24px; font-size:13px; color:var(--muted);">
+      Payments processed by Stripe. Cancel anytime from your billing portal.
+    </p>
+  </div>
+</section>
+
+<!-- ── FAQ ───────────────────────────────────────────────────────────── -->
+<section id="faq">
+  <div class="container">
+    <div class="section-eyebrow">FAQ</div>
+    <h2>Common questions</h2>
+
+    <div class="faq-list">
+
+      <div class="faq-item">
+        <div class="faq-q">What is Edge Alert?</div>
+        <div class="faq-a">
+          Edge Alert is a signal monitoring service for Kalshi prediction markets.
+          It scans active markets, applies a calibration model built on 80,000+ historical
+          settlements, and alerts you when the current market price diverges from the
+          calibrated win rate — creating a potential edge net of fees.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Is this investment advice?</div>
+        <div class="faq-a">
+          No. Edge Alert is an informational and data service. Signals are data outputs —
+          not recommendations to buy or sell any contract. Prediction markets carry risk.
+          You make all trading decisions. Past signal accuracy does not guarantee future results.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Which markets does it cover?</div>
+        <div class="faq-a">
+          Currently: Kalshi BTC 15-minute price direction markets (KXBTC15M series)
+          and in-game sports markets for NBA, NHL, and NCAAMB. Sports signals only trigger
+          when games are 85%+ complete, where calibrated edges are strongest.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">How fast are alerts delivered?</div>
+        <div class="faq-a">
+          Signals are delivered via Telegram within ~60 seconds of being detected.
+          The scanner runs continuously and pushes alerts immediately when a qualifying
+          signal appears. No batching — each signal is sent as it's found.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">How is edge calculated?</div>
+        <div class="faq-a">
+          Edge = (calibrated win rate × payout) − (loss probability × stake) − Kalshi
+          taker fee. The calibrated win rate comes from historical settlement data at each
+          price bucket. Only signals where this calculation is positive after fees are surfaced.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Do I need a Kalshi account?</div>
+        <div class="faq-a">
+          Yes, if you want to trade on the signals. You'll need a Kalshi account and
+          available balance. Edge Alert only provides the signals — you place your own
+          trades. Edge Alert does not have access to your Kalshi account.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Can I cancel anytime?</div>
+        <div class="faq-a">
+          Yes. Subscriptions are month-to-month with no lock-in. Cancel from your Stripe
+          billing portal at any time. Access continues through the end of your billing period.
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ───────────────────────────────────────────────────────────── -->
+<section class="cta-section">
+  <div class="container">
+    <div class="section-eyebrow">Get Started</div>
+    <h2>Start seeing the signals.</h2>
+    <p>Join Edge Alert. First month. Cancel anytime.</p>
+    <a href="#pricing" class="btn-primary">View Plans →</a>
+  </div>
+</section>
+
+<!-- ── Footer ────────────────────────────────────────────────────────── -->
+<footer>
+  <strong>Edge Alert</strong> is an informational signal service. Not investment advice.<br />
+  Prediction markets carry risk. Past signal accuracy does not guarantee future results.<br />
+  You are responsible for all trading decisions made using this data.<br /><br />
+  <span style="color: #3a3a50;">
+    © 2026 North Star AI Tools &amp; Automation · Built with calibration, not hype.
+  </span>
+</footer>
+
+</body>
+</html>
