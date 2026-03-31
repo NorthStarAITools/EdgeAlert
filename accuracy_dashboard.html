@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Edge Alert — Live Accuracy Dashboard</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --card: #12121a;
+    --border: #1e1e2e;
+    --text: #e0e0e8;
+    --muted: #6b6b80;
+    --green: #00e676;
+    --green-dim: #00c85340;
+    --yellow: #ffd740;
+    --red: #ff5252;
+    --accent: #6c63ff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .logo {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    color: var(--text);
+  }
+
+  .logo span { color: var(--green); }
+
+  .status-pill {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 99px;
+    background: var(--green-dim);
+    color: var(--green);
+    border: 1px solid #00e67630;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    margin-bottom: 36px;
+    font-size: 14px;
+  }
+
+  .big-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .stat-label {
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    color: var(--green);
+  }
+
+  .stat-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    margin-bottom: 18px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th {
+    text-align: left;
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    padding: 0 0 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 12px 0;
+    font-size: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  .accuracy-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .bar-track {
+    height: 6px;
+    background: var(--border);
+    border-radius: 99px;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: var(--green);
+    transition: width 0.5s ease;
+  }
+
+  .acc-num {
+    font-weight: 600;
+    color: var(--green);
+    min-width: 46px;
+    text-align: right;
+    font-size: 14px;
+  }
+
+  .tier-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+
+  .tier-HIGH { background: #00e67620; color: var(--green); border: 1px solid #00e67630; }
+  .tier-MEDIUM { background: #ffd74020; color: var(--yellow); border: 1px solid #ffd74030; }
+  .tier-SPECULATIVE { background: #ff525220; color: var(--red); border: 1px solid #ff525230; }
+
+  .pending-note {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+  }
+
+  .pending-note .big { font-size: 36px; margin-bottom: 10px; }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 20px 24px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    max-width: 900px;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
+
+  .refresh-note {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  #error-msg {
+    background: #ff525215;
+    border: 1px solid #ff525230;
+    border-radius: 8px;
+    padding: 16px;
+    color: var(--red);
+    font-size: 13px;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">⚡ Edge<span>Alert</span></div>
+  <div class="status-pill"><div class="dot"></div> Live Tracking</div>
+</header>
+
+<main>
+  <h1>Signal Accuracy Dashboard</h1>
+  <p class="subtitle">
+    Predicted vs actual outcomes — all signals tracked against Kalshi settlement data.
+    Calibrated on 80,000+ historical markets.
+  </p>
+
+  <div id="error-msg">Could not load accuracy data. Make sure accuracy_report.json is in the same directory.</div>
+
+  <!-- Big stats row -->
+  <div class="big-stats" id="big-stats">
+    <div class="stat-card">
+      <div class="stat-label">Overall Accuracy</div>
+      <div class="stat-value" id="overall-acc">—</div>
+      <div class="stat-sub" id="overall-wl">Loading...</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Signals Settled</div>
+      <div class="stat-value" id="total-settled" style="color: var(--text)">—</div>
+      <div class="stat-sub" id="total-pending">— pending</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Last 30 Days</div>
+      <div class="stat-value" id="acc-30d">—</div>
+      <div class="stat-sub" id="acc-30d-wl">Loading...</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Data Updated</div>
+      <div class="stat-value" style="font-size: 18px; color: var(--text)" id="updated-at">—</div>
+      <div class="stat-sub">UTC</div>
+    </div>
+  </div>
+
+  <!-- By confidence tier -->
+  <div class="section">
+    <div class="section-title">By Confidence Tier</div>
+    <div id="confidence-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Tier</th>
+            <th>Signals</th>
+            <th>Accuracy</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="confidence-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- By market type -->
+  <div class="section">
+    <div class="section-title">By Market Type</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Signals</th>
+          <th>W / L</th>
+          <th>Accuracy</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="type-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- Calibration note -->
+  <div class="section" style="padding: 16px 24px;">
+    <div style="font-size: 13px; color: var(--muted); line-height: 1.6;">
+      <strong style="color: var(--text);">About this data:</strong>
+      Accuracy figures reflect live signal performance tracked in real-time against Kalshi market settlements.
+      Signals are generated using calibration models built on historical market data — not backtested on the same data used for calibration.
+      Past accuracy does not guarantee future results. This is not investment advice.
+    </div>
+  </div>
+</main>
+
+<footer>
+  Edge Alert is an informational signal service. Not investment advice.<br/>
+  Markets are inherently uncertain. Past signal accuracy does not guarantee future results.
+</footer>
+
+<script>
+// Loads accuracy_report.json from same directory.
+// For production, host this file and the JSON at the same origin,
+// or update the fetch URL to your CDN/API endpoint.
+
+const REPORT_URL = "./data/accuracy_report.json";
+
+function fmtPct(val) {
+  if (val == null) return "—";
+  return (val * 100).toFixed(1) + "%";
+}
+
+function barHtml(accuracy) {
+  const pct = Math.round((accuracy || 0) * 100);
+  const color = pct >= 75 ? "var(--green)" : pct >= 60 ? "var(--yellow)" : "var(--red)";
+  return `
+    <div class="accuracy-bar">
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%; background:${color}"></div></div>
+      <div class="acc-num" style="color:${color}">${pct}%</div>
+    </div>`;
+}
+
+async function loadReport() {
+  try {
+    const resp = await fetch(REPORT_URL + "?t=" + Date.now());
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    const r = await resp.json();
+    renderReport(r);
+  } catch (e) {
+    document.getElementById("error-msg").style.display = "block";
+    document.getElementById("overall-acc").textContent = "—";
+    document.getElementById("overall-wl").textContent = "Data file not found";
+    console.error("Failed to load accuracy report:", e);
+  }
+}
+
+function renderReport(r) {
+  // Big stats
+  document.getElementById("overall-acc").textContent =
+    r.overall_accuracy != null ? r.overall_accuracy_pct.toFixed(1) + "%" : "—";
+  document.getElementById("overall-wl").textContent =
+    r.total_settled > 0 ? `${r.total_wins}W / ${r.total_losses}L` : "No settled signals yet";
+
+  document.getElementById("total-settled").textContent = r.total_settled;
+  document.getElementById("total-pending").textContent = `${r.total_pending} pending`;
+
+  const r30 = r.recent_30d || {};
+  document.getElementById("acc-30d").textContent =
+    r30.accuracy != null ? (r30.accuracy * 100).toFixed(1) + "%" : "—";
+  document.getElementById("acc-30d-wl").textContent =
+    r30.signals > 0 ? `${r30.wins}W / ${r30.signals - r30.wins}L` : "No data yet";
+
+  const updatedAt = r.generated_at ? r.generated_at.slice(0, 16).replace("T", " ") : "—";
+  document.getElementById("updated-at").textContent = updatedAt;
+
+  // Confidence tier table
+  const confBody = document.getElementById("confidence-tbody");
+  const confData = r.by_confidence || {};
+  const tiers = ["HIGH", "MEDIUM", "SPECULATIVE"];
+  confBody.innerHTML = "";
+
+  let hasConf = false;
+  for (const tier of tiers) {
+    const d = confData[tier];
+    if (!d) continue;
+    hasConf = true;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><span class="tier-badge tier-${tier}">${tier}</span></td>
+      <td>${d.signals}</td>
+      <td style="width: 55%">${barHtml(d.accuracy)}</td>
+    `;
+    confBody.appendChild(tr);
+  }
+
+  if (!hasConf) {
+    confBody.innerHTML = `<tr><td colspan="3" style="color:var(--muted); padding: 20px 0;">No settled signals yet.</td></tr>`;
+  }
+
+  // Market type table
+  const typeBody = document.getElementById("type-tbody");
+  const typeData = r.by_market_type || {};
+  typeBody.innerHTML = "";
+
+  let hasType = false;
+  for (const [mtype, d] of Object.entries(typeData)) {
+    hasType = true;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td style="text-transform:uppercase; font-weight:600">${mtype}</td>
+      <td>${d.signals}</td>
+      <td>${d.wins}W / ${d.signals - d.wins}L</td>
+      <td colspan="2" style="width: 50%">${barHtml(d.accuracy)}</td>
+    `;
+    typeBody.appendChild(tr);
+  }
+
+  if (!hasType) {
+    typeBody.innerHTML = `<tr><td colspan="5" style="color:var(--muted); padding: 20px 0;">No settled signals yet.</td></tr>`;
+  }
+}
+
+// Load on init
+loadReport();
+
+// Auto-refresh every 5 minutes
+setInterval(loadReport, 5 * 60 * 1000);
+</script>
+</body>
+</html>
