@@ -25,6 +25,7 @@ from datetime import datetime, timezone
 
 from edge_engine import scan_all, scan_crypto, scan_sports
 from formatter import format_console, format_telegram, format_json, format_daily_digest
+from accuracy_tracker import ingest_signals, settle_pending, build_accuracy_report, REPORT_FILE
 
 # ── Config ───────────────────────────────────────────────────────────────────
 
@@ -77,6 +78,7 @@ def run_scan(args):
         results = {
             "crypto": [],
             "sports": scan_sports(min_edge_pct=min_edge),
+            "polymarket": [],
             "scan_time": datetime.now(timezone.utc).isoformat(),
         }
         results["total_signals"] = len(results["sports"])
@@ -84,11 +86,21 @@ def run_scan(args):
         results = {
             "crypto": scan_crypto(min_edge_pct=min_edge),
             "sports": [],
+            "polymarket": [],
             "scan_time": datetime.now(timezone.utc).isoformat(),
         }
         results["total_signals"] = len(results["crypto"])
+    elif args.polymarket_only:
+        from polymarket_scanner import scan_polymarket
+        results = {
+            "crypto": [],
+            "sports": [],
+            "polymarket": scan_polymarket(min_edge_pct=min_edge),
+            "scan_time": datetime.now(timezone.utc).isoformat(),
+        }
+        results["total_signals"] = len(results["polymarket"])
     else:
-        results = scan_all(min_edge_pct=min_edge)
+        results = scan_all(min_edge_pct=min_edge, include_polymarket=not args.no_polymarket)
 
     # Save if requested
     if args.save:
@@ -106,11 +118,15 @@ def run_scan(args):
 
 
 def run_loop(args):
-    """Continuous scanning mode."""
+    """Continuous scanning mode with integrated accuracy tracking."""
     interval = args.interval or DEFAULT_SCAN_INTERVAL
+    # Run accuracy settle/export every N scans (not every cycle — settling
+    # hits Kalshi API and markets don't resolve in 30 seconds)
+    ACCURACY_EVERY = 10  # ~5 min at default 30s interval
     print(f"  Edge Alert — Continuous mode (scan every {interval}s)")
     print(f"  Min edge: {args.min_edge}%")
     print(f"  Saving: {'YES' if args.save else 'NO'}")
+    print(f"  Accuracy tracking: every {ACCURACY_EVERY} scans")
     print(f"  Press Ctrl+C to stop.\n")
 
     scan_count = 0
@@ -125,15 +141,46 @@ def run_loop(args):
 
             if n > 0:
                 print(f"  [{scan_count}] {n} signal(s) found — {total_signals} total")
+                # Ingest immediately when signals found
+                try:
+                    new = ingest_signals()
+                    if new:
+                        print(f"           ↳ {new} signal(s) ingested for tracking")
+                except Exception as e:
+                    print(f"           ↳ ingest error: {e}")
             else:
                 # Quiet mode for empty scans
                 ts = datetime.now().strftime("%H:%M:%S")
                 print(f"  [{scan_count}] {ts} — no signals", end="\r")
 
+            # Periodic accuracy: settle resolved markets + export report
+            if scan_count % ACCURACY_EVERY == 0:
+                try:
+                    ingest_signals()  # catch any missed ingestions
+                    settled, total_pending = settle_pending(verbose=False)
+                    if settled > 0:
+                        report = build_accuracy_report()
+                        with open(REPORT_FILE, "w") as f:
+                            json.dump(report, f, indent=2)
+                        wr = report.get("overall", {}).get("win_rate", 0)
+                        print(f"  [{scan_count}] Accuracy updated: {settled} settled, {wr:.1%} win rate")
+                except Exception as e:
+                    print(f"  [{scan_count}] Accuracy error: {e}")
+
             time.sleep(interval)
 
     except KeyboardInterrupt:
-        print(f"\n\n  Stopped after {scan_count} scans, {total_signals} total signals.")
+        # Final accuracy pass on shutdown
+        try:
+            ingest_signals()
+            settle_pending(verbose=False)
+            report = build_accuracy_report()
+            with open(REPORT_FILE, "w") as f:
+                json.dump(report, f, indent=2)
+            print(f"\n  Final accuracy report exported.")
+        except Exception:
+            pass
+        print(f"\n  Stopped after {scan_count} scans, {total_signals} total signals.")
         if args.save:
             print(f"  Signals saved to {SIGNALS_FILE}")
 
@@ -207,6 +254,8 @@ def main():
     parser.add_argument("--history", action="store_true", help="Show today's signal history")
     parser.add_argument("--sports-only", action="store_true", help="Sports signals only")
     parser.add_argument("--crypto-only", action="store_true", help="Crypto signals only")
+    parser.add_argument("--polymarket-only", action="store_true", help="Polymarket signals only")
+    parser.add_argument("--no-polymarket", action="store_true", help="Exclude Polymarket from full scan")
     parser.add_argument("--min-edge", type=float, default=DEFAULT_MIN_EDGE, help="Min edge %% threshold")
     parser.add_argument("--save", action="store_true", help="Save signals to JSONL")
     parser.add_argument("--interval", type=int, default=None, help="Scan interval in seconds (loop mode)")

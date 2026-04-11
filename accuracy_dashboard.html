@@ -243,6 +243,46 @@
     font-size: 13px;
     display: none;
   }
+
+  .cta-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .cta-btn {
+    display: inline-block;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .cta-btn.primary {
+    background: var(--green);
+    color: var(--bg);
+  }
+
+  .cta-btn.primary:hover {
+    background: #00dd66;
+    transform: translateY(-2px);
+  }
+
+  .cta-btn.secondary {
+    background: var(--accent);
+    color: var(--bg);
+  }
+
+  .cta-btn.secondary:hover {
+    background: #7a73ff;
+    transform: translateY(-2px);
+  }
 </style>
 </head>
 <body>
@@ -255,8 +295,8 @@
 <main>
   <h1>Signal Accuracy Dashboard</h1>
   <p class="subtitle">
-    Predicted vs actual outcomes — all signals tracked against Kalshi settlement data.
-    Calibrated on 80,000+ historical markets.
+    Predicted vs actual outcomes — all signals tracked against Kalshi settlements and
+    Polymarket resolutions. Kalshi: calibrated on 80,000+ markets. Polymarket: Z-score analysis.
   </p>
 
   <div id="error-msg">Could not load accuracy data. Make sure accuracy_report.json is in the same directory.</div>
@@ -324,14 +364,28 @@
   <div class="section" style="padding: 16px 24px;">
     <div style="font-size: 13px; color: var(--muted); line-height: 1.6;">
       <strong style="color: var(--text);">About this data:</strong>
-      Accuracy figures reflect live signal performance tracked in real-time against Kalshi market settlements.
+      Accuracy figures reflect live signal performance tracked in real-time against Kalshi market settlements
+      and Polymarket resolutions.
       Signals are generated using calibration models built on historical market data — not backtested on the same data used for calibration.
       Past accuracy does not guarantee future results. This is not investment advice.
+    </div>
+  </div>
+
+  <!-- CTA Section -->
+  <div class="section" style="text-align: center; padding: 40px 24px;">
+    <h2 style="font-size: 20px; margin-bottom: 12px; color: var(--text);">Ready to get real-time alerts?</h2>
+    <p style="color: var(--muted); margin-bottom: 24px; font-size: 14px;">
+      This dashboard shows historical accuracy. Subscribe now for live signal delivery.
+    </p>
+    <div class="cta-buttons">
+      <a href="https://buy.stripe.com/8x2cN72UBanhgjN93r00000" class="cta-btn primary">Basic Plan — $39/mo</a>
+      <a href="https://buy.stripe.com/3cIbJ3fHn2UP4B50wV00001" class="cta-btn secondary">Pro Plan — $79/mo</a>
     </div>
   </div>
 </main>
 
 <footer>
+  Powered by <strong>North Star AI Tools</strong><br/>
   Edge Alert is an informational signal service. Not investment advice.<br/>
   Markets are inherently uncertain. Past signal accuracy does not guarantee future results.
 </footer>

@@ -14,11 +14,12 @@ dist/
 build/
 .eggs/
 
-# Data / Logs
+# Data / Logs / Database
 data/*.json
 data/*.jsonl
 data/*.log
 *.log
+*.db
 
 # OS
 .DS_Store

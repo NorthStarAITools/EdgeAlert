@@ -31,6 +31,7 @@ from datetime import datetime, timezone
 from edge_engine import scan_all
 from formatter import format_telegram, format_daily_digest
 from edge_alert import load_todays_signals, save_signals
+import customer_db
 
 # ── Config ───────────────────────────────────────────────────────────────────
 
@@ -302,6 +303,71 @@ def cmd_status(config):
     )
     ok = send_telegram_message(token, config["ops_chat_id"], msg)
     print(f"  Status sent to Ops: {'OK' if ok else 'FAILED'}")
+
+
+def get_tier_filtered_signals(results, tier):
+    """Filter signals based on customer tier.
+
+    Basic: crypto signals only.
+    Pro: all signals (crypto + sports).
+    """
+    if tier == "pro":
+        return results  # Pro gets everything
+    # Basic: crypto only
+    return {
+        "crypto": results.get("crypto", []),
+        "sports": [],
+        "scan_time": results.get("scan_time"),
+        "total_signals": len(results.get("crypto", [])),
+    }
+
+
+def deliver_to_customers(results, config):
+    """Deliver signals to paying customers based on their tier.
+
+    Checks customer DB for active subscribers and their tier.
+    Basic customers get crypto only. Pro customers get everything.
+    Skips cancelled/past_due customers.
+
+    Falls back to channel-wide delivery if no customers in DB
+    (backwards compatible with pre-subscription setup).
+    """
+    token = config["bot_token"]
+    active_customers = customer_db.get_active_customers()
+
+    if not active_customers:
+        # No customers in DB — use legacy channel delivery
+        return False
+
+    delivered = 0
+    for customer in active_customers:
+        chat_id = customer.get("telegram_chat_id")
+        if not chat_id:
+            continue  # Customer hasn't joined Telegram yet
+
+        tier = customer.get("tier", "basic")
+        filtered = get_tier_filtered_signals(results, tier)
+
+        if filtered["total_signals"] == 0:
+            continue
+
+        msg = format_telegram(filtered)
+        ok = send_telegram_message(token, chat_id, msg)
+        if ok:
+            delivered += 1
+            # Log delivery
+            for mtype in ["crypto", "sports"]:
+                for sig in filtered.get(mtype, []):
+                    try:
+                        customer_db.log_delivery(
+                            customer["id"],
+                            f"{sig.ticker}_{sig.side}",
+                            "telegram",
+                        )
+                    except Exception:
+                        pass
+
+    return delivered > 0
 
 
 def main():

@@ -124,7 +124,7 @@ def ingest_signals():
 
             scan_time = scan.get("scan_time", "")
 
-            for mtype in ["crypto", "sports"]:
+            for mtype in ["crypto", "sports", "polymarket"]:
                 for sig in scan.get(mtype, []):
                     sig_id = make_signal_id(sig)
                     if sig_id in existing:
@@ -197,6 +197,42 @@ def fetch_market_settlement(ticker: str) -> tuple[Optional[str], Optional[int]]:
         return None, None
 
 
+def fetch_polymarket_settlement(ticker: str) -> tuple[Optional[str], Optional[int]]:
+    """Fetch settlement for a Polymarket signal.
+
+    Polymarket tickers in our system are POLY_<slug> format.
+    We use the Gamma API to check resolution status.
+
+    Returns (result, yes_price) or (None, None) if still open.
+    """
+    try:
+        from polymarket_scanner import check_polymarket_settlement, gamma_get
+
+        # Extract slug from our POLY_ ticker format
+        slug = ticker.replace("POLY_", "").lower().replace("_", "-")
+
+        # Search for the market by slug
+        data = gamma_get("/markets", params={"slug": slug})
+        if not data:
+            return None, None
+
+        market = data[0] if isinstance(data, list) and data else data
+        if not isinstance(market, dict):
+            return None, None
+
+        condition_id = market.get("conditionId") or market.get("condition_id", "")
+        if not condition_id:
+            return None, None
+
+        return check_polymarket_settlement(condition_id)
+
+    except ImportError:
+        return None, None
+    except Exception as e:
+        print(f"  [!] Polymarket settlement error for {ticker}: {e}")
+        return None, None
+
+
 def settle_pending(verbose=True) -> tuple[int, int]:
     """Check all PENDING outcomes against Kalshi API and settle them.
 
@@ -232,8 +268,13 @@ def settle_pending(verbose=True) -> tuple[int, int]:
 
         ticker = rec["ticker"]
         our_side = rec["side"]
+        market_type = rec.get("market_type", "")
 
-        result, yes_price = fetch_market_settlement(ticker)
+        # Route to correct settlement checker based on market type
+        if market_type == "polymarket":
+            result, yes_price = fetch_polymarket_settlement(ticker)
+        else:
+            result, yes_price = fetch_market_settlement(ticker)
 
         if result is None:
             still_pending += 1
@@ -286,7 +327,7 @@ def build_accuracy_report() -> dict:
 
     # By market type
     by_type = {}
-    for mtype in ["crypto", "sports"]:
+    for mtype in ["crypto", "sports", "polymarket"]:
         type_settled = [r for r in settled if r["market_type"] == mtype]
         type_wins = [r for r in type_settled if r["outcome"] == "WIN"]
         if type_settled:

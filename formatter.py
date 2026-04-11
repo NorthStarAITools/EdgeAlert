@@ -26,12 +26,17 @@ def format_console(signals_by_type):
     lines.append(f"  {total} signal{'s' if total != 1 else ''} found")
     lines.append("=" * 72)
 
-    for market_type in ["crypto", "sports"]:
+    for market_type in ["crypto", "sports", "polymarket"]:
         sigs = signals_by_type.get(market_type, [])
         if not sigs:
             continue
 
-        label = "CRYPTO 15-MIN" if market_type == "crypto" else "SPORTS IN-GAME"
+        if market_type == "crypto":
+            label = "CRYPTO 15-MIN"
+        elif market_type == "sports":
+            label = "SPORTS IN-GAME"
+        else:
+            label = "POLYMARKET"
         lines.append(f"\n  ┌─ {label} ({len(sigs)} signal{'s' if len(sigs) != 1 else ''}) ─┐")
 
         for s in sigs:
@@ -41,8 +46,14 @@ def format_console(signals_by_type):
             lines.append(f"  │  {conf_icon} {s.confidence} — {s.side.upper()} {s.ticker}")
             lines.append(f"  │  Title:  {s.title}")
             lines.append(f"  │  Price:  {s.our_price_cents}c  |  Edge: {s.edge_pct:+.1f}%  |  EV: {s.ev_per_contract:.1f}c/contract")
-            lines.append(f"  │  WR:     {s.actual_win_rate*100:.1f}% actual vs {s.implied_prob*100:.1f}% implied  |  Fee: {s.fee_cents:.1f}c")
-            lines.append(f"  │  Spread: {s.spread}c ({s.yes_bid}/{s.yes_ask})  |  Vol: {s.volume:,}")
+
+            if market_type == "polymarket":
+                z_score = s.game_pct or 0  # Z-score stored in game_pct field
+                lines.append(f"  │  Z-score: {z_score:.2f} | Hist mean: {s.actual_win_rate*100:.1f}% vs Current: {s.implied_prob*100:.1f}%  |  Fee: {s.fee_cents:.1f}c")
+                lines.append(f"  │  Category: {s.sport or 'event'}  |  Vol: ${s.volume:,.0f}")
+            else:
+                lines.append(f"  │  WR:     {s.actual_win_rate*100:.1f}% actual vs {s.implied_prob*100:.1f}% implied  |  Fee: {s.fee_cents:.1f}c")
+                lines.append(f"  │  Spread: {s.spread}c ({s.yes_bid}/{s.yes_ask})  |  Vol: {s.volume:,}")
 
             if market_type == "crypto" and s.minutes_left is not None:
                 lines.append(f"  │  Window: {s.minutes_left} min left")
@@ -70,24 +81,34 @@ def format_telegram(signals_by_type):
     lines.append(f"⚡ *EDGE ALERT* — {total} signal{'s' if total != 1 else ''}")
     lines.append(f"_{scan_time}Z_\n")
 
-    for market_type in ["crypto", "sports"]:
+    for market_type in ["crypto", "sports", "polymarket"]:
         sigs = signals_by_type.get(market_type, [])
         if not sigs:
             continue
 
-        label = "🪙 CRYPTO" if market_type == "crypto" else "🏀 SPORTS"
+        if market_type == "crypto":
+            label = "🪙 CRYPTO"
+        elif market_type == "sports":
+            label = "🏀 SPORTS"
+        else:
+            label = "🔮 POLYMARKET"
         lines.append(f"*{label}*\n")
 
         for s in sigs:
             conf = {"HIGH": "🟢", "MEDIUM": "🟡", "SPECULATIVE": "🔴"}.get(s.confidence, "⚪")
             lines.append(f"{conf} *{s.side.upper()} {s.ticker}* @ {s.our_price_cents}c")
             lines.append(f"Edge: `{s.edge_pct:+.1f}%` | EV: `{s.ev_per_contract:.1f}c`")
-            lines.append(f"WR: {s.actual_win_rate*100:.1f}% vs {s.implied_prob*100:.1f}% implied")
 
-            if market_type == "crypto":
-                lines.append(f"⏱ {s.minutes_left or '?'} min left")
-            elif s.game_pct:
-                lines.append(f"🎯 {s.game_pct*100:.0f}% complete")
+            if market_type == "polymarket":
+                z_score = s.game_pct or 0
+                lines.append(f"Z-score: `{z_score:.2f}` | Vol: ${s.volume:,.0f}")
+                lines.append(f"_{s.title}_")
+            else:
+                lines.append(f"WR: {s.actual_win_rate*100:.1f}% vs {s.implied_prob*100:.1f}% implied")
+                if market_type == "crypto":
+                    lines.append(f"⏱ {s.minutes_left or '?'} min left")
+                elif s.game_pct:
+                    lines.append(f"🎯 {s.game_pct*100:.0f}% complete")
             lines.append("")
 
     if total == 0:
@@ -109,6 +130,7 @@ def format_json(signals_by_type):
         "total_signals": signals_by_type.get("total_signals", 0),
         "crypto": [asdict(s) for s in signals_by_type.get("crypto", [])],
         "sports": [asdict(s) for s in signals_by_type.get("sports", [])],
+        "polymarket": [asdict(s) for s in signals_by_type.get("polymarket", [])],
     }
     return output
 
@@ -128,17 +150,19 @@ def format_daily_digest(scan_history):
 
     all_crypto = []
     all_sports = []
+    all_polymarket = []
     for scan in scan_history:
         all_crypto.extend(scan.get("crypto", []))
         all_sports.extend(scan.get("sports", []))
+        all_polymarket.extend(scan.get("polymarket", []))
 
     lines.append(f"# Edge Alert — Daily Digest ({today})")
     lines.append(f"**{total_scans} scans** | **{total_signals} total signals**")
-    lines.append(f"Crypto: {len(all_crypto)} | Sports: {len(all_sports)}")
+    lines.append(f"Crypto: {len(all_crypto)} | Sports: {len(all_sports)} | Polymarket: {len(all_polymarket)}")
     lines.append("")
 
     # Top signals by edge
-    all_signals = all_crypto + all_sports
+    all_signals = all_crypto + all_sports + all_polymarket
     if all_signals:
         all_signals.sort(key=lambda s: s.edge_pct, reverse=True)
         lines.append("## Top Signals (by edge)")
