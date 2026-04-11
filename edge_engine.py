@@ -367,6 +367,7 @@ def scan_sports(min_edge_pct=1.0, min_game_pct=0.85, max_spread=10):
         return signals
 
     markets = fetch_kalshi_markets(SPORTS_SERIES)
+    skipped_no_quote = 0
 
     for m in markets:
         ticker = m.get("ticker", "")
@@ -383,9 +384,10 @@ def scan_sports(min_edge_pct=1.0, min_game_pct=0.85, max_spread=10):
         if not is_live or game_pct < effective_min_pct:
             continue
 
-        yes_bid = m.get("yes_bid", 0) or 0
-        yes_ask = m.get("yes_ask", 0) or 0
+        yes_bid = int(round(float(m.get("yes_bid_dollars") or 0) * 100))
+        yes_ask = int(round(float(m.get("yes_ask_dollars") or 0) * 100))
         if not yes_bid or not yes_ask:
+            skipped_no_quote += 1
             continue
 
         spread = yes_ask - yes_bid
@@ -426,8 +428,13 @@ def scan_sports(min_edge_pct=1.0, min_game_pct=0.85, max_spread=10):
             yes_bid=yes_bid,
             yes_ask=yes_ask,
             spread=spread,
-            volume=m.get("volume", 0) or 0,
+            volume=int(float(m.get("volume_fp") or 0)),
         ))
+
+    if markets and not signals and skipped_no_quote == len(
+        [m for m in markets if m.get("status") == "active"]
+    ):
+        print(f"  [!] sports: all {skipped_no_quote} active markets had empty quotes — check Kalshi schema")
 
     # Sort by edge descending
     signals.sort(key=lambda s: s.edge_pct, reverse=True)
@@ -438,6 +445,7 @@ def scan_crypto(min_edge_pct=1.0, max_spread=12):
     """Scan crypto 15-min markets for +EV signals."""
     signals = []
     markets = fetch_kalshi_markets(CRYPTO_SERIES)
+    skipped_no_quote = 0
 
     now = datetime.now(timezone.utc)
 
@@ -449,9 +457,10 @@ def scan_crypto(min_edge_pct=1.0, max_spread=12):
         if status != "active":
             continue
 
-        yes_bid = m.get("yes_bid", 0) or 0
-        yes_ask = m.get("yes_ask", 0) or 0
+        yes_bid = int(round(float(m.get("yes_bid_dollars") or 0) * 100))
+        yes_ask = int(round(float(m.get("yes_ask_dollars") or 0) * 100))
         if not yes_bid or not yes_ask:
+            skipped_no_quote += 1
             continue
 
         spread = yes_ask - yes_bid
@@ -508,20 +517,39 @@ def scan_crypto(min_edge_pct=1.0, max_spread=12):
             yes_bid=yes_bid,
             yes_ask=yes_ask,
             spread=spread,
-            volume=m.get("volume", 0) or 0,
+            volume=int(float(m.get("volume_fp") or 0)),
         ))
+
+    if markets and not signals and skipped_no_quote == len(
+        [m for m in markets if m.get("status") == "active"]
+    ):
+        print(f"  [!] crypto: all {skipped_no_quote} active markets had empty quotes — check Kalshi schema")
 
     signals.sort(key=lambda s: s.edge_pct, reverse=True)
     return signals
 
 
-def scan_all(min_edge_pct=1.0):
+def scan_all(min_edge_pct=1.0, include_polymarket=True):
     """Run full scan across all market types. Returns dict of signal lists."""
     results = {
         "crypto": scan_crypto(min_edge_pct=min_edge_pct),
         "sports": scan_sports(min_edge_pct=min_edge_pct),
+        "polymarket": [],
         "scan_time": datetime.now(timezone.utc).isoformat(),
         "total_signals": 0,
     }
-    results["total_signals"] = len(results["crypto"]) + len(results["sports"])
+
+    # Polymarket scan (optional — can be disabled if API is down)
+    if include_polymarket:
+        try:
+            from polymarket_scanner import scan_polymarket
+            results["polymarket"] = scan_polymarket(min_edge_pct=min_edge_pct)
+        except ImportError:
+            print("  [!] polymarket_scanner not available — skipping Polymarket scan")
+        except Exception as e:
+            print(f"  [!] Polymarket scan error: {e}")
+
+    results["total_signals"] = (
+        len(results["crypto"]) + len(results["sports"]) + len(results["polymarket"])
+    )
     return results
