@@ -36,17 +36,33 @@ LATE_GAME_CAL = {
     (91, 95): 0.9815,  (96, 100): 0.9972,
 }
 
-# Crypto 15-min: simplified calibration buckets (19K markets)
-# Maps (minute_in_window, price_bucket_lo, price_bucket_hi) → win_rate
-# We embed the key profitable zones only
-CRYPTO_CAL = {
-    # Final 3 minutes (minutes 13-15), high-price buckets
-    # Format: {minute: {(lo, hi): win_rate}}
-    15: {(71, 80): 0.840, (81, 90): 0.951, (91, 99): 0.985},
-    14: {(71, 80): 0.815, (81, 90): 0.930, (91, 99): 0.975},
-    13: {(71, 80): 0.790, (81, 90): 0.905, (91, 99): 0.960},
-    12: {(71, 80): 0.770, (81, 90): 0.880, (91, 99): 0.950},
-}
+# Crypto 15-min: full calibration from 19K-market backtest.
+# Loaded from TradingProducts/source_code/data/crypto15m_calibration.json.
+# Keys are "{minute}_{lo}-{hi}" (e.g. "13_91-100") → {"win_rate": float, "n": int}.
+# Parsed into {minute: {(lo, hi): {"win_rate": float, "n": int}}} for lookup.
+_CRYPTO_CAL_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "..", "..", "TradingProducts", "source_code", "data", "crypto15m_calibration.json",
+)
+
+
+def _load_crypto_cal(path=_CRYPTO_CAL_PATH):
+    with open(path) as f:
+        raw = json.load(f)
+    cal = {}
+    for key, val in raw.items():
+        minute_str, range_str = key.split("_", 1)
+        minute = int(minute_str)
+        lo_str, hi_str = range_str.split("-", 1)
+        lo, hi = int(lo_str), int(hi_str)
+        cal.setdefault(minute, {})[(lo, hi)] = {
+            "win_rate": float(val["win_rate"]),
+            "n": int(val["n"]),
+        }
+    return cal
+
+
+CRYPTO_CAL = _load_crypto_cal()
 
 # ESPN endpoints for live game detection
 ESPN_ENDPOINTS = {
@@ -163,21 +179,22 @@ def calculate_sports_edge(yes_price_cents):
 # ── Crypto Edge Calculation ──────────────────────────────────────────────────
 
 def get_crypto_win_rate(minute, yes_price_cents):
-    """Look up calibrated win rate for crypto 15-min markets."""
+    """Look up calibrated (win_rate, n) for crypto 15-min markets. Miss → (None, 0)."""
     minute_cal = CRYPTO_CAL.get(minute)
     if not minute_cal:
-        return None
-    for (lo, hi), rate in minute_cal.items():
+        return None, 0
+    for (lo, hi), cell in minute_cal.items():
         if lo <= yes_price_cents <= hi:
-            return rate
-    return None
+            return cell["win_rate"], cell["n"]
+    return None, 0
 
 
 def calculate_crypto_edge(minute, yes_price_cents):
-    """Calculate edge for crypto markets. Returns same tuple as sports."""
-    actual_wr = get_crypto_win_rate(minute, yes_price_cents)
+    """Calculate edge for crypto markets.
+    Returns (side, edge_roi, ev, wr, implied, fee, n) — n is the calibration sample size."""
+    actual_wr, cal_n = get_crypto_win_rate(minute, yes_price_cents)
     if actual_wr is None:
-        return None, 0, 0, 0, 0, 0
+        return None, 0, 0, 0, 0, 0, 0
 
     no_price = 100 - yes_price_cents
     yes_fee = kalshi_fee_cents(yes_price_cents)
@@ -190,9 +207,9 @@ def calculate_crypto_edge(minute, yes_price_cents):
     no_roi = (no_ev / no_price * 100) if no_price > 0 else 0
 
     if yes_roi > no_roi:
-        return "yes", yes_roi, yes_ev, actual_wr, yes_price_cents / 100, yes_fee
+        return "yes", yes_roi, yes_ev, actual_wr, yes_price_cents / 100, yes_fee, cal_n
     else:
-        return "no", no_roi, no_ev, actual_wr, yes_price_cents / 100, no_fee
+        return "no", no_roi, no_ev, actual_wr, yes_price_cents / 100, no_fee, cal_n
 
 
 # ── Live Game Detection ──────────────────────────────────────────────────────
@@ -487,7 +504,7 @@ def scan_crypto(min_edge_pct=1.0, max_spread=12):
         except Exception:
             continue
 
-        side, edge, ev, wr, implied, fee = calculate_crypto_edge(minute, yes_mid)
+        side, edge, ev, wr, implied, fee, cal_n = calculate_crypto_edge(minute, yes_mid)
         if side is None or edge < min_edge_pct:
             continue
 
@@ -518,6 +535,7 @@ def scan_crypto(min_edge_pct=1.0, max_spread=12):
             yes_ask=yes_ask,
             spread=spread,
             volume=int(float(m.get("volume_fp") or 0)),
+            calibration_n=cal_n,
         ))
 
     if markets and not signals and skipped_no_quote == len(
