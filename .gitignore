@@ -20,6 +20,8 @@ data/*.jsonl
 data/*.log
 *.log
 *.db
+*.db-shm
+*.db-wal
 
 # OS
 .DS_Store
