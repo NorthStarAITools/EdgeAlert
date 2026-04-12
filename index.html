@@ -4,11 +4,11 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Edge Alert — Prediction Market Signal Feed</title>
-<meta name="description" content="Real-time Kalshi prediction market signals calibrated on 80,000+ markets. Know which side has edge before the market closes." />
+<meta name="description" content="Real-time prediction market signals from Kalshi + Polymarket. Calibrated on 80,000+ markets with Z-score analysis. Know which side has edge." />
 
 <!-- Open Graph -->
 <meta property="og:title" content="Edge Alert — Prediction Market Signals" />
-<meta property="og:description" content="Calibrated signal feed for Kalshi markets. Crypto + sports. Real-time. $39/month." />
+<meta property="og:description" content="Calibrated signal feed for Kalshi + Polymarket. Crypto, sports, events. Real-time. $39/month." />
 <meta property="og:type" content="website" />
 
 <style>
@@ -493,7 +493,7 @@
     <a href="#" class="logo">⚡ Edge<em>Alert</em></a>
     <div class="nav-links">
       <a href="#how-it-works">How It Works</a>
-      <a href="#accuracy">Accuracy</a>
+      <!-- HIDDEN until 30d real data: <a href="#accuracy">Accuracy</a> -->
       <a href="#pricing">Pricing</a>
       <a href="#pricing" class="nav-cta">Subscribe →</a>
     </div>
@@ -504,20 +504,20 @@
 <div class="hero">
   <div class="hero-badge">
     <div class="badge-dot"></div>
-    Live signal feed — Kalshi prediction markets
+    Live signal feed — Kalshi + Polymarket
   </div>
   <h1>
     Know which side<br/>has <span class="hl">edge</span> before the close.
   </h1>
   <p class="hero-sub">
-    Edge Alert scans Kalshi prediction markets in real time and flags
-    opportunities where calibrated win rates diverge from market price —
-    net of fees.
+    Edge Alert scans Kalshi and Polymarket in real time — flagging
+    opportunities where calibrated win rates and Z-score analysis
+    diverge from market price, net of fees.
   </p>
   <div class="hero-cta-group">
     <!-- Replace href values with your Stripe Payment Links -->
     <a href="#pricing" class="btn-primary">Get Edge Alert → $39/mo</a>
-    <a href="accuracy_dashboard.html" class="btn-secondary">View Accuracy Data</a>
+    <!-- HIDDEN until 30d real data: <a href="accuracy_dashboard.html" class="btn-secondary">View Accuracy Data</a> -->
   </div>
 </div>
 
@@ -529,8 +529,8 @@
       <div class="stat-item-label">Markets calibrated</div>
     </div>
     <div>
-      <div class="stat-item-value">2</div>
-      <div class="stat-item-label">Market types scanned</div>
+      <div class="stat-item-value">2 Platforms</div>
+      <div class="stat-item-label">Kalshi + Polymarket</div>
     </div>
     <div>
       <div class="stat-item-value">≤60s</div>
@@ -538,7 +538,7 @@
     </div>
     <div>
       <div class="stat-item-value">Fee-adjusted</div>
-      <div class="stat-item-label">Edge net of Kalshi fees</div>
+      <div class="stat-item-label">Edge net of platform fees</div>
     </div>
   </div>
 </div>
@@ -567,18 +567,19 @@
         <div class="step-num">02</div>
         <div class="step-title">Live market scan</div>
         <div class="step-body">
-          Edge Alert polls active Kalshi markets continuously — crypto 15-minute
-          windows and late-game sports markets. Only scans when conditions
-          match calibrated edges (final 3 minutes, 85%+ game completion).
+          Edge Alert polls Kalshi and Polymarket continuously — crypto 15-minute
+          windows, late-game sports, and high-volume event markets. Kalshi signals
+          use calibrated edges; Polymarket signals use Z-score deviation analysis.
         </div>
       </div>
       <div class="step-card">
         <div class="step-num">03</div>
         <div class="step-title">Edge calculation</div>
         <div class="step-body">
-          For each live market, edge = (calibrated win rate × payout) −
-          (loss probability × stake) − Kalshi taker fee. Only signals with
-          positive edge after fees are surfaced.
+          For Kalshi: edge = (calibrated win rate × payout) −
+          (loss probability × stake) − taker fee. For Polymarket: Z-score
+          deviation from historical mean identifies overreactions. Only
+          positive-edge signals after fees are surfaced.
         </div>
       </div>
       <div class="step-card">
@@ -627,6 +628,7 @@
 </section>
 
 <!-- ── Accuracy ──────────────────────────────────────────────────────── -->
+<!-- HIDDEN until 30 days of real signal data
 <section id="accuracy" style="background: var(--surface);">
   <div class="container">
     <div class="section-eyebrow">Track Record</div>
@@ -665,6 +667,7 @@
     </p>
   </div>
 </section>
+-->
 
 <!-- ── Pricing ───────────────────────────────────────────────────────── -->
 <section id="pricing">
@@ -684,11 +687,11 @@
         <ul class="plan-features">
           <li>Telegram signal alerts</li>
           <li>Crypto 15-min signals (KXBTC15M)</li>
-          <li>Sports late-game signals</li>
+          <li>Polymarket event signals (Z-score)</li>
+          <li class="dim">Sports late-game signals (Pro only)</li>
           <li>Daily digest summary</li>
-          <li>Accuracy dashboard access</li>
+          <!-- HIDDEN until 30d real data: <li>Accuracy dashboard access</li> -->
           <li class="dim">API access</li>
-          <li class="dim">Priority support</li>
         </ul>
         <!-- Replace with your Stripe Payment Link URL -->
         <a href="https://buy.stripe.com/8x2cN72UBanhgjN93r00000" class="plan-cta secondary" id="basic-cta">
@@ -703,11 +706,10 @@
         <div class="plan-period">per month</div>
         <ul class="plan-features">
           <li>Everything in Basic</li>
+          <li>Sports signals (NBA, NHL, NCAAMB, MLB)</li>
+          <li>Full Polymarket coverage (all categories)</li>
           <li>Raw signal JSON via API</li>
-          <li>Lower edge threshold (1% vs 2%)</li>
-          <li>Multiple Telegram channels</li>
           <li>Historical signal archive</li>
-          <li>Early access to new signal types</li>
           <li>Priority support</li>
         </ul>
         <!-- Replace with your Stripe Payment Link URL -->
@@ -735,10 +737,10 @@
       <div class="faq-item">
         <div class="faq-q">What is Edge Alert?</div>
         <div class="faq-a">
-          Edge Alert is a signal monitoring service for Kalshi prediction markets.
-          It scans active markets, applies a calibration model built on 80,000+ historical
-          settlements, and alerts you when the current market price diverges from the
-          calibrated win rate — creating a potential edge net of fees.
+          Edge Alert is a signal monitoring service for Kalshi and Polymarket.
+          It scans active markets using calibration models (80,000+ Kalshi settlements)
+          and Z-score analysis (Polymarket probability deviations), alerting you when
+          market prices diverge from statistical fair value — net of fees.
         </div>
       </div>
 
@@ -754,9 +756,11 @@
       <div class="faq-item">
         <div class="faq-q">Which markets does it cover?</div>
         <div class="faq-a">
-          Currently: Kalshi BTC 15-minute price direction markets (KXBTC15M series)
-          and in-game sports markets for NBA, NHL, and NCAAMB. Sports signals only trigger
-          when games are 85%+ complete, where calibrated edges are strongest.
+          Two platforms: Kalshi (BTC 15-min crypto markets + late-game sports for
+          NBA, NHL, NCAAMB, MLB) and Polymarket (high-volume event markets across
+          politics, crypto, sports, and current events). Kalshi sports signals only
+          trigger in the final stretch (85%+ complete). Polymarket signals trigger
+          on significant Z-score deviations from historical probability means.
         </div>
       </div>
 
@@ -772,16 +776,16 @@
       <div class="faq-item">
         <div class="faq-q">How is edge calculated?</div>
         <div class="faq-a">
-          Edge = (calibrated win rate × payout) − (loss probability × stake) − Kalshi
+          For Kalshi: Edge = (calibrated win rate × payout) − (loss probability × stake) − Kalshi
           taker fee. The calibrated win rate comes from historical settlement data at each
           price bucket. Only signals where this calculation is positive after fees are surfaced.
         </div>
       </div>
 
       <div class="faq-item">
-        <div class="faq-q">Do I need a Kalshi account?</div>
+        <div class="faq-q">Do I need a Kalshi or Polymarket account?</div>
         <div class="faq-a">
-          Yes, if you want to trade on the signals. You'll need a Kalshi account and
+          Yes, if you want to trade on the signals. You'll need an account on the relevant platform and
           available balance. Edge Alert only provides the signals — you place your own
           trades. Edge Alert does not have access to your Kalshi account.
         </div>

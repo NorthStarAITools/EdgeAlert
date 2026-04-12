@@ -255,8 +255,8 @@
 <main>
   <h1>Signal Accuracy Dashboard</h1>
   <p class="subtitle">
-    Predicted vs actual outcomes — all signals tracked against Kalshi settlement data.
-    Calibrated on 80,000+ historical markets.
+    Predicted vs actual outcomes — all signals tracked against Kalshi settlements and
+    Polymarket resolutions. Kalshi: calibrated on 80,000+ markets. Polymarket: Z-score analysis.
   </p>
 
   <div id="error-msg">Could not load accuracy data. Make sure accuracy_report.json is in the same directory.</div>
@@ -324,8 +324,9 @@
   <div class="section" style="padding: 16px 24px;">
     <div style="font-size: 13px; color: var(--muted); line-height: 1.6;">
       <strong style="color: var(--text);">About this data:</strong>
-      Accuracy figures reflect live signal performance tracked in real-time against Kalshi market settlements.
-      Signals are generated using calibration models built on historical market data — not backtested on the same data used for calibration.
+      Accuracy figures reflect live signal performance tracked in real-time against Kalshi market settlements
+      and Polymarket resolutions. Kalshi signals use calibration models built on 80,000+ historical settlements.
+      Polymarket signals use Z-score deviation analysis on probability movements.
       Past accuracy does not guarantee future results. This is not investment advice.
     </div>
   </div>
